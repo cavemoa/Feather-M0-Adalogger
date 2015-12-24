@@ -19,9 +19,12 @@
 #endif
 
 File logfile;   // Create file object
-float measuredvbat;   // Variable for battery voltage
-RTCZero rtc;    // Create RTC object
 
+const int SampleIntSeconds = 10000;   //Sample interval in ms i.e. 1000 = 1 sec
+float measuredvbat;   // Variable for battery voltage
+
+
+RTCZero rtc;    // Create RTC object
 /* Change these values to set the current initial time */
 const byte hours = 0;
 const byte minutes = 0;
@@ -44,14 +47,14 @@ void setup() {
   */
   while (! Serial); // Wait until Serial is ready
   Serial.begin(115200);
-  Serial.println("\r\nAnalog logger test");
+  Serial.println("\r\nFeather M0 Analog logger");
   
   pinMode(13, OUTPUT);
 
 
   // see if the card is present and can be initialized:
   if (!SD.begin(cardSelect)) {
-    Serial.println("Card init. failed!");
+    Serial.println("Card init. failed! or Card not present");
     error(2);     // Two red flashes means no card or card init failed.
   }
   char filename[15];
@@ -76,7 +79,7 @@ void setup() {
 
   pinMode(13, OUTPUT);
   pinMode(8, OUTPUT);
-  Serial.println("Ready!");
+  Serial.println("Logging ....");
 }
 
 uint8_t i=0;
@@ -85,7 +88,7 @@ uint8_t i=0;
 void loop() {
   digitalWrite(8, HIGH);  // Turn the green LED on
 
-  float measuredvbat = analogRead(VBATPIN);   //Measure the battery voltage at pin A7
+  measuredvbat = analogRead(VBATPIN);   //Measure the battery voltage at pin A7
   measuredvbat *= 2;    // we divided by 2, so multiply back
   measuredvbat *= 3.3;  // Multiply by 3.3V, our reference voltage
   measuredvbat /= 1024; // convert to voltage
@@ -111,7 +114,7 @@ void loop() {
   
   digitalWrite(8, LOW);   // Turn the green LED off
   
-  delay(10000);   // Simple 10 second delay
+  delay(SampleIntSeconds);   // Interval set by const in header
 }
 
 ///////////////   Functions   //////////////////
