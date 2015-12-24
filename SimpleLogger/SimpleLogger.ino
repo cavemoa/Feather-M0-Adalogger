@@ -2,8 +2,8 @@
   Simple Logger using internal RTC for Arduino Zero
 
  Created by:  Jonathan DAvies
- Date:        21 Oct 2015
- Version:     0.1
+ Date:        21 Dec 2015
+ Version:     0.3
 */
 
 
@@ -48,7 +48,7 @@ void setup() {
   // see if the card is present and can be initialized:
   if (!SD.begin(cardSelect)) {
     Serial.println("Card init. failed!");
-    error(2);
+    error(2);     // Two red flashes means no card or card init failed.
   }
   char filename[15];
   strcpy(filename, "ANALOG00.CSV");
