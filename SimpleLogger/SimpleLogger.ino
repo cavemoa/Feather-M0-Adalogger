@@ -25,12 +25,18 @@ RTCZero rtc;    // Create RTC object
 const byte hours = 0;
 const byte minutes = 0;
 const byte seconds = 0;
+/* Change these values to set the current initial date */
+const byte day = 1;
+const byte month = 1;
+const byte year = 15;
 
 
 //////////////    Setup   ///////////////////
 void setup() {
 
   rtc.begin();    // Start the RTC
+  rtc.setTime(hours, minutes, seconds);
+  rtc.setDate(day, month, year);
   
   // while (! Serial); // Wait until Serial is ready
   // Serial.begin(115200);
