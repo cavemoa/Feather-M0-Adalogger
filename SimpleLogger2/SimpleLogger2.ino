@@ -19,7 +19,7 @@
 #endif
 
 File logfile;   // Create file object
-
+float measuredvbat;   // Variable for battery voltage
 RTCZero rtc;    // Create RTC object
 
 /* Change these values to set the current initial time */
@@ -42,9 +42,9 @@ void setup() {
   /* If you want output for debugging and the Feather to wait for you
   to open a serial port uncomment the the lines below.
   */
-  // while (! Serial); // Wait until Serial is ready
-  // Serial.begin(115200);
-  // Serial.println("\r\nAnalog logger test");
+  while (! Serial); // Wait until Serial is ready
+  Serial.begin(115200);
+  Serial.println("\r\nAnalog logger test");
   
   pinMode(13, OUTPUT);
 
@@ -85,20 +85,13 @@ uint8_t i=0;
 void loop() {
   digitalWrite(8, HIGH);  // Turn the green LED on
 
-  float measuredvbat = analogRead(VBATPIN);
+  float measuredvbat = analogRead(VBATPIN);   //Measure the battery voltage at pin A7
   measuredvbat *= 2;    // we divided by 2, so multiply back
   measuredvbat *= 3.3;  // Multiply by 3.3V, our reference voltage
   measuredvbat /= 1024; // convert to voltage
   
-  /* Print RTC Time
-  Serial.print(rtc.getHours());
-  Serial.print(":");
-  Serial.print(rtc.getMinutes());
-  Serial.print(":");
-  Serial.print(rtc.getSeconds());
-  Serial.print(",");
-  Serial.println(measuredvbat);   // Print battery voltage
-  */
+  // Print RTC Time
+  SerialOutput();
   
   // Print data and time followed by battery voltage to SD card
   logfile.print(rtc.getDay());
@@ -122,6 +115,24 @@ void loop() {
 }
 
 ///////////////   Functions   //////////////////
+
+void SerialOutput() {
+  // Debbugging output of time/date and battery voltage
+  Serial.print(rtc.getDay());
+  Serial.print("/");
+  Serial.print(rtc.getMonth());
+  Serial.print("/");
+  Serial.print(rtc.getYear());
+  Serial.print("\t");
+  Serial.print(rtc.getHours());
+  Serial.print(":");
+  Serial.print(rtc.getMinutes());
+  Serial.print(":");
+  Serial.print(rtc.getSeconds());
+  Serial.print(",");
+  Serial.println(measuredvbat);   // Print battery voltage  
+}
+
 
 // blink out an error code
 void error(uint8_t errno) {
