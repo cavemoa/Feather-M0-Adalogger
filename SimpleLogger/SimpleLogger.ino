@@ -79,7 +79,7 @@ uint8_t i=0;
 
 ///////////////   Loop    //////////////////
 void loop() {
-  digitalWrite(8, HIGH);
+  digitalWrite(8, HIGH);  // Turn the green LED on
 
   float measuredvbat = analogRead(VBATPIN);
   measuredvbat *= 2;    // we divided by 2, so multiply back
@@ -96,7 +96,13 @@ void loop() {
   Serial.println(measuredvbat);   // Print battery voltage
   */
   
-  // Print Data to SD card
+  // Print data and time followed by battery voltage to SD card
+  logfile.print(rtc.getDay());
+  logfile.print("/");
+  logfile.print(rtc.getMonth());
+  logfile.print("/");
+  logfile.print(rtc.getYear());
+  logfile.print("\t");
   logfile.print(rtc.getHours());
   logfile.print(":");
   logfile.print(rtc.getMinutes());
@@ -106,12 +112,13 @@ void loop() {
   logfile.println(measuredvbat);   // Print battery voltage
   logfile.flush();
   
-  digitalWrite(8, LOW);
+  digitalWrite(8, LOW);   // Turn the green LED off
   
-  delay(10000);
+  delay(10000);   // Simple 10 second delay
 }
 
 ///////////////   Functions   //////////////////
+
 // blink out an error code
 void error(uint8_t errno) {
   while(1) {
