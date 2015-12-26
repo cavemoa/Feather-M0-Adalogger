@@ -11,28 +11,33 @@
 #include <SD.h>
 #include <RTCZero.h>
 
-
+// #define ECHO_TO_SERIAL // Allows serial output if uncommented
 #define cardSelect 4  // Set the pins used
 #define VBATPIN A7    // Battery Voltage on Pin A7
 #ifdef ARDUINO_SAMD_ZERO
-   #define Serial SerialUSB
+   #define Serial SerialUSB   // re-defines USB serial from M0 chip so it appears as regular serial
 #endif
 
-File logfile;   // Create file object
+//////////////// Key Settings ///////////////////
 
-const int SampleIntSeconds = 10000;   //Sample interval in ms i.e. 1000 = 1 sec
-float measuredvbat;   // Variable for battery voltage
-
+const int SampleIntSeconds = 15000;   //Sample interval in ms i.e. 1000 = 1 sec
 
 RTCZero rtc;    // Create RTC object
 /* Change these values to set the current initial time */
-const byte hours = 0;
-const byte minutes = 0;
+const byte hours = 3;
+const byte minutes = 48;
 const byte seconds = 0;
 /* Change these values to set the current initial date */
-const byte day = 1;
-const byte month = 1;
+const byte day = 24;
+const byte month = 12;
 const byte year = 15;
+
+/////////////// Global Objects ////////////////////
+File logfile;   // Create file object
+float measuredvbat;   // Variable for battery voltage
+
+
+
 
 
 //////////////    Setup   ///////////////////
@@ -41,13 +46,12 @@ void setup() {
   rtc.begin();    // Start the RTC
   rtc.setTime(hours, minutes, seconds);   // Set the time
   rtc.setDate(day, month, year);    // Set the date
-  
-  /* If you want output for debugging and the Feather to wait for you
-  to open a serial port uncomment the the lines below.
-  */
-  while (! Serial); // Wait until Serial is ready
-  Serial.begin(115200);
-  Serial.println("\r\nFeather M0 Analog logger");
+   
+  #ifdef ECHO_TO_SERIAL
+    while (! Serial); // Wait until Serial is ready
+    Serial.begin(115200);
+    Serial.println("\r\nFeather M0 Analog logger");
+  #endif
   
   pinMode(13, OUTPUT);
 
@@ -82,8 +86,6 @@ void setup() {
   Serial.println("Logging ....");
 }
 
-uint8_t i=0;
-
 ///////////////   Loop    //////////////////
 void loop() {
   digitalWrite(8, HIGH);  // Turn the green LED on
@@ -92,35 +94,21 @@ void loop() {
   measuredvbat *= 2;    // we divided by 2, so multiply back
   measuredvbat *= 3.3;  // Multiply by 3.3V, our reference voltage
   measuredvbat /= 1024; // convert to voltage
+
+  SdOutput();       // Output to uSD card
   
-  // Print RTC Time
-  SerialOutput();
+  #ifdef ECHO_TO_SERIAL
+    SerialOutput();   // Only logs to serial if ECHO_TO_SERIAL is uncommented at start of code
+  #endif
   
-  // Print data and time followed by battery voltage to SD card
-  logfile.print(rtc.getDay());
-  logfile.print("/");
-  logfile.print(rtc.getMonth());
-  logfile.print("/");
-  logfile.print(rtc.getYear());
-  logfile.print("\t");
-  logfile.print(rtc.getHours());
-  logfile.print(":");
-  logfile.print(rtc.getMinutes());
-  logfile.print(":");
-  logfile.print(rtc.getSeconds());
-  logfile.print(", ");
-  logfile.println(measuredvbat);   // Print battery voltage
-  logfile.flush();
-  
-  digitalWrite(8, LOW);   // Turn the green LED off
-  
+  digitalWrite(8, LOW);   // Turn the green LED off 
   delay(SampleIntSeconds);   // Interval set by const in header
 }
 
 ///////////////   Functions   //////////////////
 
+// Debbugging output of time/date and battery voltage
 void SerialOutput() {
-  // Debbugging output of time/date and battery voltage
   Serial.print(rtc.getDay());
   Serial.print("/");
   Serial.print(rtc.getMonth());
@@ -129,11 +117,37 @@ void SerialOutput() {
   Serial.print("\t");
   Serial.print(rtc.getHours());
   Serial.print(":");
+  if(rtc.getMinutes() < 10)
+    Serial.print('0');      // Trick to add leading zero for formatting
   Serial.print(rtc.getMinutes());
   Serial.print(":");
+  if(rtc.getSeconds() < 10)
+    Serial.print('0');      // Trick to add leading zero for formatting
   Serial.print(rtc.getSeconds());
   Serial.print(",");
   Serial.println(measuredvbat);   // Print battery voltage  
+}
+
+// Print data and time followed by battery voltage to SD card
+void SdOutput() {
+  logfile.print(rtc.getDay());
+  logfile.print("/");
+  logfile.print(rtc.getMonth());
+  logfile.print("/");
+  logfile.print(rtc.getYear());
+  logfile.print("\t");
+  logfile.print(rtc.getHours());
+  logfile.print(":");
+  if(rtc.getMinutes() < 10)
+    logfile.print('0');      // Trick to add leading zero for formatting
+  logfile.print(rtc.getMinutes());
+  logfile.print(":");
+  if(rtc.getSeconds() < 10)
+    logfile.print('0');      // Trick to add leading zero for formatting
+  logfile.print(rtc.getSeconds());
+  logfile.print(", ");
+  logfile.println(measuredvbat);   // Print battery voltage
+  logfile.flush();
 }
 
 
