@@ -24,6 +24,9 @@ void loop()
 {
   
   rtc.setAlarmSeconds(30); // Wakes on the 30th second of the minute NOT every 30 secs!
+  // alarm.time.second += 5;
+  // alarm.time.second = alarm.time.second % 60;
+
   rtc.enableAlarm(rtc.MATCH_SS); // Match seconds only
   rtc.attachInterrupt(alarmMatch);
   

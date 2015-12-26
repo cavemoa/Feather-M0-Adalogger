@@ -9,7 +9,8 @@
 
 #include <SPI.h>
 #include <SD.h>
-#include <RTCZero.h>
+// #include <RTCZero.h> // had roll over isues between 12:00 going to 28:00
+#include <RTCInt.h> // uses library taken from Arduino 1.7.6 
 
 // #define ECHO_TO_SERIAL // Allows serial output if uncommented
 #define cardSelect 4  // Set the pins used
@@ -33,6 +34,7 @@ const byte month = 12;
 const byte year = 15;
 
 /////////////// Global Objects ////////////////////
+RTCInt rtc;  //create an RTCInt type object
 File logfile;   // Create file object
 float measuredvbat;   // Variable for battery voltage
 
@@ -43,7 +45,7 @@ float measuredvbat;   // Variable for battery voltage
 //////////////    Setup   ///////////////////
 void setup() {
 
-  rtc.begin();    // Start the RTC
+  rtc.begin(TIME_H24);    // Start the RTC in 24hr mode
   rtc.setTime(hours, minutes, seconds);   // Set the time
   rtc.setDate(day, month, year);    // Set the date
    
@@ -95,6 +97,9 @@ void loop() {
   measuredvbat *= 3.3;  // Multiply by 3.3V, our reference voltage
   measuredvbat /= 1024; // convert to voltage
 
+  rtc.getDate();      //getting date in local structure (local_date)
+  rtc.getTime();      //getting time in local structure(local_time)
+ 
   SdOutput();       // Output to uSD card
   
   #ifdef ECHO_TO_SERIAL
@@ -109,43 +114,43 @@ void loop() {
 
 // Debbugging output of time/date and battery voltage
 void SerialOutput() {
-  Serial.print(rtc.getDay());
+  Serial.print(rtc.local_date.day);
   Serial.print("/");
-  Serial.print(rtc.getMonth());
+  Serial.print(rtc.local_date.month));
   Serial.print("/");
-  Serial.print(rtc.getYear());
+  Serial.print(rtc.local_date.year+2000);
   Serial.print("\t");
-  Serial.print(rtc.getHours());
+  Serial.print(rtc.local_time.hour);
   Serial.print(":");
-  if(rtc.getMinutes() < 10)
+  if(rtc.local_time.minute < 10)
     Serial.print('0');      // Trick to add leading zero for formatting
-  Serial.print(rtc.getMinutes());
+  Serial.print(rtc.local_time.minute);
   Serial.print(":");
-  if(rtc.getSeconds() < 10)
+  if(rtc.local_time.second < 10)
     Serial.print('0');      // Trick to add leading zero for formatting
-  Serial.print(rtc.getSeconds());
+  Serial.print(rtc.local_time.second);
   Serial.print(",");
   Serial.println(measuredvbat);   // Print battery voltage  
 }
 
 // Print data and time followed by battery voltage to SD card
 void SdOutput() {
-  logfile.print(rtc.getDay());
+  logfile.print(rtc.local_date.day);
   logfile.print("/");
-  logfile.print(rtc.getMonth());
+  logfile.print(rtc.local_date.month));
   logfile.print("/");
-  logfile.print(rtc.getYear());
+  logfile.print(rtc.local_date.year+2000);
   logfile.print("\t");
-  logfile.print(rtc.getHours());
+  logfile.print(rtc.local_time.hour);
   logfile.print(":");
-  if(rtc.getMinutes() < 10)
+  if(rtc.local_time.minute < 10)
     logfile.print('0');      // Trick to add leading zero for formatting
-  logfile.print(rtc.getMinutes());
+  logfile.print(rtc.local_time.minute);
   logfile.print(":");
-  if(rtc.getSeconds() < 10)
+  if(rtc.local_time.second < 10)
     logfile.print('0');      // Trick to add leading zero for formatting
-  logfile.print(rtc.getSeconds());
-  logfile.print(", ");
+  logfile.print(rtc.local_time.second);
+  logfile.print(",");
   logfile.println(measuredvbat);   // Print battery voltage
   logfile.flush();
 }
