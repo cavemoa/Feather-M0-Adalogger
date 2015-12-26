@@ -2,8 +2,9 @@
   Simple Logger using internal RTC for Arduino Zero
 
  Created by:  Jonathan DAvies
- Date:        21 Dec 2015
- Version:     0.3
+ Date:        26 Dec 2015
+ Version:     0.4
+ Switched to RTCInt library from Arduino after problem with RTCZero
 */
 
 
@@ -12,7 +13,7 @@
 // #include <RTCZero.h> // had roll over isues between 12:00 going to 28:00
 #include <RTCInt.h> // uses library taken from Arduino 1.7.6 
 
-// #define ECHO_TO_SERIAL // Allows serial output if uncommented
+#define ECHO_TO_SERIAL // Allows serial output if uncommented
 #define cardSelect 4  // Set the pins used
 #define VBATPIN A7    // Battery Voltage on Pin A7
 #ifdef ARDUINO_SAMD_ZERO
@@ -23,10 +24,9 @@
 
 const int SampleIntSeconds = 15000;   //Sample interval in ms i.e. 1000 = 1 sec
 
-RTCZero rtc;    // Create RTC object
 /* Change these values to set the current initial time */
-const byte hours = 3;
-const byte minutes = 48;
+const byte hours = 15;
+const byte minutes = 50;
 const byte seconds = 0;
 /* Change these values to set the current initial date */
 const byte day = 24;
@@ -46,7 +46,7 @@ float measuredvbat;   // Variable for battery voltage
 void setup() {
 
   rtc.begin(TIME_H24);    // Start the RTC in 24hr mode
-  rtc.setTime(hours, minutes, seconds);   // Set the time
+  rtc.setTime(hours,0, minutes, seconds);   // Set the time
   rtc.setDate(day, month, year);    // Set the date
    
   #ifdef ECHO_TO_SERIAL
@@ -116,7 +116,7 @@ void loop() {
 void SerialOutput() {
   Serial.print(rtc.local_date.day);
   Serial.print("/");
-  Serial.print(rtc.local_date.month));
+  Serial.print(rtc.local_date.month);
   Serial.print("/");
   Serial.print(rtc.local_date.year+2000);
   Serial.print("\t");
@@ -137,7 +137,7 @@ void SerialOutput() {
 void SdOutput() {
   logfile.print(rtc.local_date.day);
   logfile.print("/");
-  logfile.print(rtc.local_date.month));
+  logfile.print(rtc.local_date.month);
   logfile.print("/");
   logfile.print(rtc.local_date.year+2000);
   logfile.print("\t");
