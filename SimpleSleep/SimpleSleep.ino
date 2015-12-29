@@ -4,9 +4,10 @@
   By: CaveMoa
   Date: 19/12/15
 */
+#define Serial SerialUSB
 
 #include <RTCZero.h>
-#define Serial SerialUSB
+
 
 /* Create an rtc object */
 RTCZero rtc;
@@ -30,21 +31,30 @@ void loop()
   rtc.enableAlarm(rtc.MATCH_SS); // Match seconds only
   rtc.attachInterrupt(alarmMatch);
   
-  
+  Serial.end();
   USBDevice.detach(); // Safely detach the USB prior to sleeping
-  delay(500);
+  //delay(10000);
   
   rtc.standbyMode();    // Sleep until next alarm match
 
   // Simple indication of being awake
-  
+  digitalWrite(13, HIGH);   // turn the LED on 
+  delay(100);              
+  digitalWrite(13, LOW);    // turn the LED off
+  delay(100);
+  digitalWrite(13, HIGH);   // turn the LED on 
+  delay(100);              
+  digitalWrite(13, LOW);    // turn the LED off
+ 
   USBDevice.attach();   // Re-attach the USB, audible sound on windows machines
+
+  delay(5000);
   
   digitalWrite(13, HIGH);   // turn the LED on 
-  delay(50);              
+  delay(250);              
   digitalWrite(13, LOW);    // turn the LED off
 
-  
+  Serial.begin(9600);
   while (! Serial); // Wait until Serial is ready
   Serial.println("Awake");
   Serial.end();

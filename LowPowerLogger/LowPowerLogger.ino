@@ -18,6 +18,8 @@
 #include <SD.h>
 #include <RTCZero.h> // Uses GabrielNotman's version of RTCZero which correctly sets 24Hr mode compared to main branch
 
+
+
 #define cardSelect 4  // Set the pins used
 #define VBATPIN A7    // Battery Voltage on Pin A7
 #ifdef ARDUINO_SAMD_ZERO
@@ -52,6 +54,7 @@ void setup() {
   rtc.begin();    // Start the RTC in 24hr mode
   rtc.setTime(hours, minutes, seconds);   // Set the time
   rtc.setDate(day, month, year);    // Set the date
+
    
   #ifdef ECHO_TO_SERIAL
     while (! Serial); // Wait until Serial is ready
@@ -107,24 +110,30 @@ void loop() {
     SerialOutput();   // Only logs to serial if ECHO_TO_SERIAL is uncommented at start of code
   #endif
   
-  digitalWrite(8, LOW);   // Turn the green LED off 
-
-  ///////// Interval Timing and Sleep Code
+  ///////// Interval Timing and Sleep Code ////////////////
   // delay(SampleIntSeconds);   // Simple delay for testing interval set by const in header
-  
-  rtc.setAlarmSeconds(30); // Wakes on the 30th second of the minute NOT every 30 secs!
+  rtc.setAlarmSeconds(30); // Wakes on the 30th second of the minute NOT every 30 secs !!!!!!!!
   rtc.enableAlarm(rtc.MATCH_SS); // Match seconds only
-  rtc.attachInterrupt(alarmMatch);
+  rtc.attachInterrupt(alarmMatch); // Attaches function to be called, currently blank
+  
   
   #ifdef ECHO_TO_SERIAL
+    Serial.println("Alarm Set");
     USBDevice.detach(); // Safely detach the USB prior to sleeping
+    Serial.println("USB detached");
+    delay(500);
   #endif  
-  delay(500);
   
+  digitalWrite(8, LOW);   // Turn the green LED off 
+  delay(50);
   rtc.standbyMode();    // Sleep until next alarm match
+  
+  // Code re-starts here after sleep !
 
+  // Once awake, re-attach USB if debugging
   #ifdef ECHO_TO_SERIAL
     USBDevice.attach();   // Re-attach the USB, audible sound on windows machines
+    while (! Serial); // Wait during debugging until Serial window is ready again
   #endif
 }
 
@@ -155,10 +164,10 @@ void SerialOutput() {
 // Print data and time followed by battery voltage to SD card
 void SdOutput() {
 
-  if (!file.sync() || file.getWriteError()) {
-    error("write error");
-    error(3);     // Three red flashes means write failed.
-  }
+  //if (!file.sync() || file.getWriteError()) {
+  //  error("write error");
+  //  error(3);     // Three red flashes means write failed.
+  //}
 
   // Formatting for file out put dd/mm/yyyy hh:mm:ss, [sensor output]
   logfile.print(rtc.getDay());
@@ -201,4 +210,9 @@ void error(uint8_t errno) {
       delay(200);
     }
   }
+}
+
+void alarmMatch() // Do something when interrupt called
+{
+  
 }
