@@ -31,11 +31,11 @@
 const int SampleIntSeconds = 30000;   //Sample interval in ms i.e. 1000 = 1 sec
 
 /* Change these values to set the current initial time */
-const byte hours = 13;
-const byte minutes = 32;
+const byte hours = 18;
+const byte minutes = 50;
 const byte seconds = 0;
 /* Change these values to set the current initial date */
-const byte day = 27;
+const byte day = 29;
 const byte month = 12;
 const byte year = 15;
 
