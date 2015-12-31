@@ -1,6 +1,6 @@
 /*
-  Simple RTC Alarm for Adafruit Feather M0 modified from 
-  RTCzero library example by Arturo Guadalupi
+  Simple RTC Alarm for Adafruit Feather M0 modified
+  with repeated serial output each time the board wakes
   By: CaveMoa
   Date: 30/12/15
 */

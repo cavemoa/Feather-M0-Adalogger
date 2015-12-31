@@ -5,13 +5,13 @@
  Output logged to uSD at intervals set
 
  Created by:  Jonathan Davies
- Date:        28 Dec 2015
- Version:     0.1
+ Date:        30 Dec 2015
+ Version:     0.2
  
 */
 
 ////////////////////////////////////////////////////////////
-//#define ECHO_TO_SERIAL // Allows serial output if uncommented
+#define ECHO_TO_SERIAL // Allows serial output if uncommented
 ////////////////////////////////////////////////////////////
 
 #include <SPI.h>
@@ -21,6 +21,8 @@
 
 
 #define cardSelect 4  // Set the pins used
+#define RED 13 // Red LED on Pin #13
+#define GREEN 8 // Green LED on Pin #8
 #define VBATPIN A7    // Battery Voltage on Pin A7
 #ifdef ARDUINO_SAMD_ZERO
    #define Serial SerialUSB   // re-defines USB serial from M0 chip so it appears as regular serial
@@ -28,7 +30,8 @@
 
 //////////////// Key Settings ///////////////////
 
-const int SampleIntSeconds = 30000;   //Sample interval in ms i.e. 1000 = 1 sec
+#define SampleIntSec 15 // RTC - Sample interval in seconds
+const int SampleIntSeconds = 5000;   //Simple Delay used for testing, ms i.e. 1000 = 1 sec
 
 /* Change these values to set the current initial time */
 const byte hours = 18;
@@ -43,6 +46,7 @@ const byte year = 15;
 RTCZero rtc;    // Create RTC object
 File logfile;   // Create file object
 float measuredvbat;   // Variable for battery voltage
+int NextAlarmSec; // Variable to hold next alarm time in seconds
 
 
 
@@ -99,11 +103,6 @@ void setup() {
 void loop() {
   digitalWrite(8, HIGH);  // Turn the green LED on
 
-  measuredvbat = analogRead(VBATPIN);   //Measure the battery voltage at pin A7
-  measuredvbat *= 2;    // we divided by 2, so multiply back
-  measuredvbat *= 3.3;  // Multiply by 3.3V, our reference voltage
-  measuredvbat /= 1024; // convert to voltage
- 
   SdOutput();       // Output to uSD card
   
   #ifdef ECHO_TO_SERIAL
@@ -111,30 +110,20 @@ void loop() {
   #endif
   
   ///////// Interval Timing and Sleep Code ////////////////
-  // delay(SampleIntSeconds);   // Simple delay for testing interval set by const in header
-  rtc.setAlarmSeconds(30); // Wakes on the 30th second of the minute NOT every 30 secs !!!!!!!!
+  
+  NextAlarmSec = (NextAlarmSec + SampleIntSec) % 60;
+  rtc.setAlarmSeconds(NextAlarmSec); // RTC time to wake, currently seconds only
   rtc.enableAlarm(rtc.MATCH_SS); // Match seconds only
   rtc.attachInterrupt(alarmMatch); // Attaches function to be called, currently blank
   
-  
-  #ifdef ECHO_TO_SERIAL
-    Serial.println("Alarm Set");
-    USBDevice.detach(); // Safely detach the USB prior to sleeping
-    Serial.println("USB detached");
-    delay(500);
-  #endif  
-  
   digitalWrite(8, LOW);   // Turn the green LED off 
   delay(50);
-  rtc.standbyMode();    // Sleep until next alarm match
   
+  delay(SampleIntSeconds);   // Simple delay for testing interval set by const in header
+  // rtc.standbyMode();    // Sleep until next alarm match
   // Code re-starts here after sleep !
+  
 
-  // Once awake, re-attach USB if debugging
-  #ifdef ECHO_TO_SERIAL
-    USBDevice.attach();   // Re-attach the USB, audible sound on windows machines
-    while (! Serial); // Wait during debugging until Serial window is ready again
-  #endif
 }
 
 ///////////////   Functions   //////////////////
@@ -158,7 +147,7 @@ void SerialOutput() {
     Serial.print('0');      // Trick to add leading zero for formatting
   Serial.print(rtc.getSeconds());
   Serial.print(",");
-  Serial.println(measuredvbat);   // Print battery voltage  
+  Serial.println(BatteryVoltage ());   // Print battery voltage  
 }
 
 // Print data and time followed by battery voltage to SD card
@@ -186,7 +175,7 @@ void SdOutput() {
     logfile.print('0');      // Trick to add leading zero for formatting
   logfile.print(rtc.getSeconds());
   logfile.print(",");
-  logfile.println(measuredvbat);   // Print battery voltage
+  logfile.println(BatteryVoltage ());   // Print battery voltage
   logfile.flush();
 
 }
@@ -210,6 +199,31 @@ void error(uint8_t errno) {
       delay(200);
     }
   }
+}
+
+// blink out an error code, Red@13 or Green@8
+void blink(uint8_t LED, uint8_t errno) {
+  while(1) {
+    uint8_t i;
+    for (i=0; i<errno; i++) {
+      digitalWrite(LED, HIGH);
+      delay(100);
+      digitalWrite(LED, LOW);
+      delay(100);
+    }
+    for (i=errno; i<10; i++) {
+      delay(200);
+    }
+  }
+}
+
+// Measure battery voltage using divider on Feather M0 - Only works on Feathers !!
+float BatteryVoltage () {
+  measuredvbat = analogRead(VBATPIN);   //Measure the battery voltage at pin A7
+  measuredvbat *= 2;    // we divided by 2, so multiply back
+  measuredvbat *= 3.3;  // Multiply by 3.3V, our reference voltage
+  measuredvbat /= 1024; // convert to voltage
+  return measuredvbat;
 }
 
 void alarmMatch() // Do something when interrupt called
