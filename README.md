@@ -9,8 +9,16 @@ First pass at a simple logger that saves ADC (in this case battery voltage) to u
 Similar to simplelogger but with code in functions and minor revisions/tweaks. Still uses delay() and not RTC
 
 ##SimpleSleep
-Basic code using the RTCzero library to set the Feathers RTC to wake ont the 30th second of every minute. It just uses a seconds match only. It then disconnects the USB and puts itself to sleep. Once awake it reconnects the USB and waits for you to re-open a serial terminal to display the fact its awake.
+Basic code using the RTCzero library to set the Feathers RTC to every 5 seconds and blink the red LED twice to show its awake.
 
-The USBDevice.detach(); -> rtc.standbyMode(); -> after RTC interupt -> USBDevice.attach(); was the crucial sequence it gettingt he Feather M0 to talk after sleeping
+##SimpleSleepUSB
+
+BAsic sketch to demonstate genrating serial, then putting the Feather M0 to sleep. When it wakes 10 seconds later it re-attaches the USB and allows serial output.
+The USBDevice.detach(); -> rtc.standbyMode(); -> after RTC interupt -> USBDevice.attach(); was the crucial sequence it gettingt he Feather M0 to talk after sleeping.
+You do need to remeber to close the serial moniotr when it goes into sleep as it won't just start outputing to the same window when it wakes. You have to open another one once you hear the USB re-attach or see the LED's blink.
+
+##LowPowerLogger
+Basic logger that utilizes the Feather M0 Adalogger. It sets the RTC then wakes at regular intervals (15 secs by default) to write to the uSD card. Currently just logs battery voltage but could of course log anything with additional code.
+It has basic error code for uSD startup, flushes after every SD card write (so not the most efficient) and flashes the green LED each sample.
 
 
