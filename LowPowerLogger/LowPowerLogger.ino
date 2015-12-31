@@ -101,28 +101,27 @@ void setup() {
 
 ///////////////   Loop    //////////////////
 void loop() {
-  digitalWrite(8, HIGH);  // Turn the green LED on
-
-  SdOutput();       // Output to uSD card
   
+  blink(GREEN,2);   // Quick blink to show we have a pulse
+
   #ifdef ECHO_TO_SERIAL
     SerialOutput();   // Only logs to serial if ECHO_TO_SERIAL is uncommented at start of code
   #endif
   
-  ///////// Interval Timing and Sleep Code ////////////////
+  SdOutput();       // Output to uSD card
   
-  NextAlarmSec = (NextAlarmSec + SampleIntSec) % 60;
+  ///////// Interval Timing and Sleep Code ////////////////
+  delay(SampleIntSeconds);   // Simple delay for testing only interval set by const in header
+
+  NextAlarmSec = (NextAlarmSec + SampleIntSec) % 60;   // i.e. 65 becomes 5
   rtc.setAlarmSeconds(NextAlarmSec); // RTC time to wake, currently seconds only
   rtc.enableAlarm(rtc.MATCH_SS); // Match seconds only
   rtc.attachInterrupt(alarmMatch); // Attaches function to be called, currently blank
+  delay(50); // Brief delay prior to sleeping not really sure its required
   
-  digitalWrite(8, LOW);   // Turn the green LED off 
-  delay(50);
-  
-  delay(SampleIntSeconds);   // Simple delay for testing interval set by const in header
   // rtc.standbyMode();    // Sleep until next alarm match
-  // Code re-starts here after sleep !
   
+  // Code re-starts here after sleep !
 
 }
 
@@ -201,19 +200,14 @@ void error(uint8_t errno) {
   }
 }
 
-// blink out an error code, Red@13 or Green@8
-void blink(uint8_t LED, uint8_t errno) {
-  while(1) {
-    uint8_t i;
-    for (i=0; i<errno; i++) {
-      digitalWrite(LED, HIGH);
-      delay(100);
-      digitalWrite(LED, LOW);
-      delay(100);
-    }
-    for (i=errno; i<10; i++) {
-      delay(200);
-    }
+// blink out an error code, Red on pin #13 or Green on pin #8
+void blink(uint8_t LED, uint8_t flashes) {
+  uint8_t i;
+  for (i=0; i<flashes; i++) {
+    digitalWrite(LED, HIGH);
+    delay(100);
+    digitalWrite(LED, LOW);
+    delay(100);
   }
 }
 
