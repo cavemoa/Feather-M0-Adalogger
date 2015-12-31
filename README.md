@@ -1,5 +1,5 @@
 # Code for Feather M0 Adalogger 
-### All code is primarily for [Feather M0 Hardware] (https://learn.adafruit.com/adafruit-feather-m0-adalogger/) by Adafruit
+#### All code is primarily for [Feather M0 Hardware] (https://learn.adafruit.com/adafruit-feather-m0-adalogger/) by Adafruit which handily runs the SAMD21 chip (i.e. Arduino Zero) which has an an inbuilt RTC. The adafruit incantation has an onboard uSD card slot and lovely small form factor. 
 Repo for the code  as I play with the new Feather M0 Adalogger from Adafruit. Aim will be to develop a standard logger code primarily for I2C devices but also ADC if you want. That makes use of the compact Feather M0, its RTC and deepsleep/low power modes.
 
 ##SimpleLogger
