@@ -15,9 +15,11 @@
 #define ECHO_TO_SERIAL // Allows serial output if uncommented
 ////////////////////////////////////////////////////////////
 
+#include <RTCZero.h>
 #include <SPI.h>
-#include <SD.h>
-#include <RTCZero.h> 
+// #include <SD.h>
+#include <SdFat.h>
+SdFat SD;
 
 #define cardSelect 4  // Set the pin used for uSD
 #define RED 13 // Red LED on Pin #13
@@ -243,6 +245,7 @@ void alarmMatch() // Do something when interrupt called
   
 }
 
+// Small ARM free RAM function for use during debugging
 int freeram () {
   char stack_dummy = 0;
   return &stack_dummy - sbrk(0);
