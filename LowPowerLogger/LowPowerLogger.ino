@@ -16,14 +16,13 @@
 
 #include <SPI.h>
 #include <SD.h>
-#include <RTCZero.h> // Uses GabrielNotman's version of RTCZero which correctly sets 24Hr mode compared to main branch
+#include <RTCZero.h> 
 
-
-
-#define cardSelect 4  // Set the pins used
+#define cardSelect 4  // Set the pin used for uSD
 #define RED 13 // Red LED on Pin #13
 #define GREEN 8 // Green LED on Pin #8
 #define VBATPIN A7    // Battery Voltage on Pin A7
+
 #ifdef ARDUINO_SAMD_ZERO
    #define Serial SerialUSB   // re-defines USB serial from M0 chip so it appears as regular serial
 #endif
@@ -32,6 +31,7 @@
 
 #define SampleIntSec 15 // RTC - Sample interval in seconds
 const int SampleIntSeconds = 5000;   //Simple Delay used for testing, ms i.e. 1000 = 1 sec
+#define SamplesPerCycle 60  // Number of samples to buffer before uSD card flush is called
 
 /* Change these values to set the current initial time */
 const byte hours = 18;
@@ -47,9 +47,6 @@ RTCZero rtc;    // Create RTC object
 File logfile;   // Create file object
 float measuredvbat;   // Variable for battery voltage
 int NextAlarmSec; // Variable to hold next alarm time in seconds
-
-
-
 
 
 //////////////    Setup   ///////////////////
@@ -109,6 +106,7 @@ void loop() {
   #endif
   
   SdOutput();       // Output to uSD card
+  logfile.flush();
   
   ///////// Interval Timing and Sleep Code ////////////////
   delay(SampleIntSeconds);   // Simple delay for testing only interval set by const in header
@@ -175,13 +173,11 @@ void SdOutput() {
   logfile.print(rtc.getSeconds());
   logfile.print(",");
   logfile.println(BatteryVoltage ());   // Print battery voltage
-  logfile.flush();
-
 }
 
 // Write data header.
 void writeHeader() {
-
+  logfile.println("DD:MM:YYYY hh:mm:ss, Battery Voltage");
 }
 
 // blink out an error code
@@ -207,7 +203,7 @@ void blink(uint8_t LED, uint8_t flashes) {
     digitalWrite(LED, HIGH);
     delay(100);
     digitalWrite(LED, LOW);
-    delay(100);
+    delay(200);
   }
 }
 
