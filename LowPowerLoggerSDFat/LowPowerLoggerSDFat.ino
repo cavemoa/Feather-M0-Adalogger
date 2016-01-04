@@ -12,7 +12,7 @@
 */
 
 ////////////////////////////////////////////////////////////
-#define ECHO_TO_SERIAL // Allows serial output if uncommented
+// #define ECHO_TO_SERIAL // Allows serial output if uncommented
 ////////////////////////////////////////////////////////////
 
 #include <RTCZero.h>
@@ -34,7 +34,7 @@ extern "C" char *sbrk(int i); //  Used by FreeRAm Function
 
 //////////////// Key Settings ///////////////////
 
-#define SampleIntSec 15 // RTC - Sample interval in seconds
+#define SampleIntSec 60 // RTC - Sample interval in seconds
 #define SamplesPerCycle 60  // Number of samples to buffer before uSD card flush is called
 
 const int SampleIntSeconds = 500;   //Simple Delay used for testing, ms i.e. 1000 = 1 sec
@@ -44,9 +44,9 @@ const byte hours = 18;
 const byte minutes = 50;
 const byte seconds = 0;
 /* Change these values to set the current initial date */
-const byte day = 29;
-const byte month = 12;
-const byte year = 15;
+const byte day = 02;
+const byte month = 01;
+const byte year = 16;
 
 /////////////// Global Objects ////////////////////
 RTCZero rtc;    // Create RTC object
@@ -59,6 +59,11 @@ unsigned int CurrentCycleCount;  // Num of smaples in current cycle, before uSD 
 //////////////    Setup   ///////////////////
 void setup() {
 
+  //Set board LED pins as output
+  pinMode(13, OUTPUT);
+  pinMode(8, OUTPUT);
+
+  //  Setup RTC and set time
   rtc.begin();    // Start the RTC in 24hr mode
   rtc.setTime(hours, minutes, seconds);   // Set the time
   rtc.setDate(day, month, year);    // Set the date
@@ -70,9 +75,6 @@ void setup() {
     Serial.println("\r\nFeather M0 Analog logger");
   #endif
   
-  pinMode(13, OUTPUT);
-
-
   // see if the card is present and can be initialized:
   if (!SD.begin(cardSelect)) {
     Serial.println("Card init. failed! or Card not present");
@@ -97,9 +99,6 @@ void setup() {
   }
   Serial.print("Writing to "); 
   Serial.println(filename);
-
-  pinMode(13, OUTPUT);
-  pinMode(8, OUTPUT);
   Serial.println("Logging ....");
 }
 
@@ -127,15 +126,15 @@ void loop() {
 
   
   ///////// Interval Timing and Sleep Code ////////////////
-  delay(SampleIntSeconds);   // Simple delay for testing only interval set by const in header
+  //delay(SampleIntSeconds);   // Simple delay for testing only interval set by const in header
 
   NextAlarmSec = (NextAlarmSec + SampleIntSec) % 60;   // i.e. 65 becomes 5
   rtc.setAlarmSeconds(NextAlarmSec); // RTC time to wake, currently seconds only
   rtc.enableAlarm(rtc.MATCH_SS); // Match seconds only
   rtc.attachInterrupt(alarmMatch); // Attaches function to be called, currently blank
-  delay(50); // Brief delay prior to sleeping not really sure its required
+  delay(5); // Brief delay prior to sleeping not really sure its required
   
-  // rtc.standbyMode();    // Sleep until next alarm match
+  rtc.standbyMode();    // Sleep until next alarm match
   
   // Code re-starts here after sleep !
 
@@ -146,10 +145,10 @@ void loop() {
 // Debbugging output of time/date and battery voltage
 void SerialOutput() {
 
-  Serial.print(CurrentCycleCount);
-  Serial.print(":");
-  Serial.print(freeram ());
-  Serial.print("-");
+  //Serial.print(CurrentCycleCount);
+  //Serial.print(":");
+  //Serial.print(freeram ());
+  //Serial.print("-");
   Serial.print(rtc.getDay());
   Serial.print("/");
   Serial.print(rtc.getMonth());
@@ -178,8 +177,7 @@ void SdOutput() {
   //}
 
   // Formatting for file out put dd/mm/yyyy hh:mm:ss, [sensor output]
-  logfile.print(CurrentCycleCount);
-  logfile.print("-");
+  
   logfile.print(rtc.getDay());
   logfile.print("/");
   logfile.print(rtc.getMonth());
