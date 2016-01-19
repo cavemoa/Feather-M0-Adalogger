@@ -17,7 +17,7 @@
 #include <SPI.h>
 // #include <SD.h>
 #include <SdFat.h>
-SdFat SD;
+SdFat SD;             //Quick way to make SdFat work with standard SD.h sketches
 
 #define cardSelect 4  // Set the pin used for uSD
 #define RED 13 // Red LED on Pin #13
@@ -32,38 +32,39 @@ extern "C" char *sbrk(int i); //  Used by FreeRAm Function
 
 //////////////// Key Settings ///////////////////
 
-#define SampleIntSec 10 // RTC - Sample interval in seconds
-#define SamplesPerCycle 6  // Number of samples to buffer before uSD card flush is called
+#define SampleIntSec 30 // RTC - Sample interval in seconds
+#define SampleIntMin 01 // RTC - Sample interval in minutes
+
+#define SamplesPerCycle 20  // Number of samples to buffer before uSD card flush is called
 
 // 65536 (2^16) is the maximum number of spreadsheet rows supported by Excel 97, Excel 2000, Excel 2002 and Excel 2003 
 // Excel 2007, 2010 and 2013 support 1,048,576 rows (2^20)). Text files that are larger than 65536 rows 
 // cannot be imported to these versions of Excel.
-#define SamplesPerFile 12 // 1 per minute = 1440 per day = 10080 per week and ¬380Kb file (assumes 38bytes per sample)
+#define SamplesPerFile 120 // 1 per minute = 1440 per day = 10080 per week and ¬380Kb file (assumes 38bytes per sample)
 
 
 const int SampleIntSeconds = 500;   //Simple Delay used for testing, ms i.e. 1000 = 1 sec
 
 /* Change these values to set the current initial time */
-const byte hours = 10;
-const byte minutes = 11;
+const byte hours = 18;
+const byte minutes = 29;
 const byte seconds = 0;
 /* Change these values to set the current initial date */
-const byte day = 05;
+const byte day = 19;
 const byte month = 01;
 const byte year = 16;
 
 /////////////// Global Objects ////////////////////
-RTCZero rtc;    // Create RTC object
-File logfile;   // Create file object
-char filename[15]; // Array for file name data logged to named in setup
+RTCZero rtc;          // Create RTC object
+File logfile;         // Create file object
+char filename[15];    // Array for file name data logged to named in setup
   
 float measuredvbat;   // Variable for battery voltage
-int NextAlarmSec; // Variable to hold next alarm time in seconds
+int NextAlarmSec;     // Variable to hold next alarm time seconds value
+int NextAlarmMin;     // Variable to hold next alarm time minute value
 
 unsigned int CurrentCycleCount;  // Num of smaples in current cycle, before uSD flush call
 unsigned int CurrentFileCount;   // Num of samples in current file
-
-
 
 //////////////    Setup   ///////////////////
 void setup() {
@@ -122,9 +123,26 @@ void loop() {
   ///////// Interval Timing and Sleep Code ////////////////
   //delay(SampleIntSeconds);   // Simple delay for testing only interval set by const in header
 
-  NextAlarmSec = (NextAlarmSec + SampleIntSec) % 60;   // i.e. 65 becomes 5
-  rtc.setAlarmSeconds(NextAlarmSec); // RTC time to wake, currently seconds only
-  rtc.enableAlarm(rtc.MATCH_SS); // Match seconds only
+  //NextAlarmSec = (NextAlarmSec + SampleIntSec) % 60;    // modulus to deal with rollover 65 becomes 5
+  //rtc.setAlarmSeconds(NextAlarmSec); // RTC time to wake, currently seconds only
+  //rtc.enableAlarm(rtc.MATCH_SS); // Match seconds only
+
+  // Simple proces if we're just adding seconds, bit more complicated if we add minutes & seconds
+  if ( SampleIntMin !=0 ) {
+    NextAlarmSec = (NextAlarmSec + SampleIntSec) % 60;   // i.e. 65 becomes 5
+    rtc.setAlarmSeconds(NextAlarmSec); // RTC time to wake, currently seconds only
+    rtc.enableAlarm(rtc.MATCH_SS); // Match seconds only
+  }
+  else {  
+    NextAlarmMin = (NextAlarmMin + SampleIntMin) % 60;   // modulus to deal with rollover 65 becomes 5
+    NextAlarmMin = (NextAlarmSec + SampleIntSec) / 60; // find rollover minute, i.e. 65 secs becomes 1 minute extra
+    NextAlarmSec = (NextAlarmSec + SampleIntSec) % 60;   // i.e. 65 becomes 5
+    rtc.setAlarmSeconds(NextAlarmMin); // Set RTC time to wake in minutes
+    rtc.setAlarmSeconds(NextAlarmSec); // Set RTC time to wake in seconds
+    rtc.enableAlarm(rtc.MATCH_MMSS);
+  }
+
+  
   rtc.attachInterrupt(alarmMatch); // Attaches function to be called, currently blank
   delay(5); // Brief delay prior to sleeping not really sure its required
   
