@@ -51,7 +51,7 @@ const byte year = 16;
 /////////////// Global Objects ////////////////////
 RTCZero rtc;    // Create RTC object
 File logfile;   // Create file object
-char filename[15];
+char filename[15]; // Array for file name data logged to named in setup
   
 float measuredvbat;   // Variable for battery voltage
 int NextAlarmSec; // Variable to hold next alarm time in seconds
@@ -71,8 +71,8 @@ void setup() {
   rtc.setTime(hours, minutes, seconds);   // Set the time
   rtc.setDate(day, month, year);    // Set the date
 
-  strcpy(filename, "ANALOG00.CSV");
-  CreateFile();   
+  strcpy(filename, "ANALOG00.CSV");   // Template for file name, characters 6 & 7 get set automatically later
+  CreateFile();
 
 
 }  
@@ -80,7 +80,6 @@ void setup() {
 /////////////////////   Loop    //////////////////////
 void loop() {
 
-  
   blink(GREEN,2);             // Quick blink to show we have a pulse
   CurrentCycleCount += 1;     //  Increment samples in current uSD flush cycle
 
@@ -117,6 +116,74 @@ void loop() {
 
 ///////////////   Functions   //////////////////
 
+// Create new file on uSD incrementing file name as required
+void CreateFile()
+{
+  #ifdef ECHO_TO_SERIAL
+    while (! Serial); // Wait until Serial is ready
+    Serial.begin(115200);
+    Serial.println("\r\nFeather M0 Analog logger");
+  #endif
+  
+  // see if the card is present and can be initialized:
+  if (!SD.begin(cardSelect)) {
+    Serial.println("Card init. failed! or Card not present");
+    error(2);     // Two red flashes means no card or card init failed.
+  }
+  
+  for (uint8_t i = 0; i < 100; i++) {
+    filename[6] = '0' + i/10;
+    filename[7] = '0' + i%10;
+    // create if does not exist, do not open existing, write, sync after write
+    if (! SD.exists(filename)) {
+      break;
+    }
+  }  
+
+  logfile = SD.open(filename, FILE_WRITE);
+  if( ! logfile ) {
+    Serial.print("Couldnt create "); 
+    Serial.println(filename);
+    error(3);
+  }
+  #ifdef ECHO_TO_SERIAL
+    Serial.print("Writing to "); 
+    Serial.println(filename);
+    Serial.println("Logging ....");
+  #endif
+
+}
+
+// Write data header to file of uSD.
+void writeHeader() {
+  logfile.println("DD:MM:YYYY hh:mm:ss, Battery Voltage");
+}
+
+// Print data and time followed by battery voltage to SD card
+void SdOutput() {
+
+  // Formatting for file out put dd/mm/yyyy hh:mm:ss, [sensor output]  
+  logfile.print(rtc.getDay());
+  logfile.print("/");
+  logfile.print(rtc.getMonth());
+  logfile.print("/");
+  logfile.print(rtc.getYear()+2000);
+  logfile.print(" ");
+  logfile.print(rtc.getHours());
+  logfile.print(":");
+  if(rtc.getMinutes() < 10)
+    logfile.print('0');      // Trick to add leading zero for formatting
+  logfile.print(rtc.getMinutes());
+  logfile.print(":");
+  if(rtc.getSeconds() < 10)
+    logfile.print('0');      // Trick to add leading zero for formatting
+  logfile.print(rtc.getSeconds());
+  logfile.print(",");
+  logfile.println(BatteryVoltage ());   // Print battery voltage
+}
+
+
+
 // Debbugging output of time/date and battery voltage
 void SerialOutput() {
 
@@ -143,34 +210,8 @@ void SerialOutput() {
   Serial.println(BatteryVoltage ());   // Print battery voltage  
 }
 
-// Print data and time followed by battery voltage to SD card
-void SdOutput() {
 
-  // Formatting for file out put dd/mm/yyyy hh:mm:ss, [sensor output]
-  
-  logfile.print(rtc.getDay());
-  logfile.print("/");
-  logfile.print(rtc.getMonth());
-  logfile.print("/");
-  logfile.print(rtc.getYear()+2000);
-  logfile.print(" ");
-  logfile.print(rtc.getHours());
-  logfile.print(":");
-  if(rtc.getMinutes() < 10)
-    logfile.print('0');      // Trick to add leading zero for formatting
-  logfile.print(rtc.getMinutes());
-  logfile.print(":");
-  if(rtc.getSeconds() < 10)
-    logfile.print('0');      // Trick to add leading zero for formatting
-  logfile.print(rtc.getSeconds());
-  logfile.print(",");
-  logfile.println(BatteryVoltage ());   // Print battery voltage
-}
 
-// Write data header.
-void writeHeader() {
-  logfile.println("DD:MM:YYYY hh:mm:ss, Battery Voltage");
-}
 
 // blink out an error code
 void error(uint8_t errno) {
@@ -209,39 +250,6 @@ float BatteryVoltage () {
 }
 
 
-void CreateFile()
-{
-    #ifdef ECHO_TO_SERIAL
-    while (! Serial); // Wait until Serial is ready
-    Serial.begin(115200);
-    Serial.println("\r\nFeather M0 Analog logger");
-  #endif
-  
-  // see if the card is present and can be initialized:
-  if (!SD.begin(cardSelect)) {
-    Serial.println("Card init. failed! or Card not present");
-    error(2);     // Two red flashes means no card or card init failed.
-  }
-  
-  for (uint8_t i = 0; i < 100; i++) {
-    filename[6] = '0' + i/10;
-    filename[7] = '0' + i%10;
-    // create if does not exist, do not open existing, write, sync after write
-    if (! SD.exists(filename)) {
-      break;
-    }
-  }  
-
-  logfile = SD.open(filename, FILE_WRITE);
-  if( ! logfile ) {
-    Serial.print("Couldnt create "); 
-    Serial.println(filename);
-    error(3);
-  }
-  Serial.print("Writing to "); 
-  Serial.println(filename);
-  Serial.println("Logging ....");
-}
 
 void alarmMatch() // Do something when interrupt called
 {
