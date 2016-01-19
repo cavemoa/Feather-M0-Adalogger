@@ -37,6 +37,12 @@ extern "C" char *sbrk(int i); //  Used by FreeRAm Function
 #define SampleIntSec 60 // RTC - Sample interval in seconds
 #define SamplesPerCycle 60  // Number of samples to buffer before uSD card flush is called
 
+// 65536 (2^16) is the maximum number of spreadsheet rows supported by Excel 97, Excel 2000, Excel 2002 and Excel 2003 
+// Excel 2007, 2010 and 2013 support 1,048,576 rows (2^20)). Text files that are larger than 65536 rows 
+// cannot be imported to these versions of Excel.
+#define SamplesPerFile 10080 // 1 per minute = 1440 per day = 10080 per week and ¬380Kb file (assumes 38bytes per sample)
+
+
 const int SampleIntSeconds = 500;   //Simple Delay used for testing, ms i.e. 1000 = 1 sec
 
 /* Change these values to set the current initial time */
@@ -55,7 +61,9 @@ char filename[15]; // Array for file name data logged to named in setup
   
 float measuredvbat;   // Variable for battery voltage
 int NextAlarmSec; // Variable to hold next alarm time in seconds
+
 unsigned int CurrentCycleCount;  // Num of smaples in current cycle, before uSD flush call
+unsigned int CurrentFileCount;   // Num of samples in current file
 
 
 
@@ -74,7 +82,6 @@ void setup() {
   strcpy(filename, "ANALOG00.CSV");   // Template for file name, characters 6 & 7 get set automatically later
   CreateFile();
 
-
 }  
 
 /////////////////////   Loop    //////////////////////
@@ -87,9 +94,10 @@ void loop() {
     SerialOutput();           // Only logs to serial if ECHO_TO_SERIAL is uncommented at start of code
   #endif
   
-  SdOutput();                 // Output to uSD card
+  WriteToSD();                 // Output to uSD card stream, will not actually be written due to buffer/page size
 
-  // Code to limit the number of power hungry writes to the uSD
+  //  Code to limit the number of power hungry writes to the uSD
+  //  Don't sync too often - requires 2048 bytes of I/O to SD card. 512 bytes of I/O if using Fat16 library
   if( CurrentCycleCount >= SamplesPerCycle ) {
     logfile.flush();
     CurrentCycleCount = 0;
@@ -98,6 +106,17 @@ void loop() {
     #endif
   }
 
+  // Code to increment files limiting number of lines in each hence size
+
+  if( CurrentFileCount >= SamplesPerFile ) {
+    //logfile.flush();
+    CurrentFileCount = 0;
+    #ifdef ECHO_TO_SERIAL
+      Serial.println("New log file created: ");
+      Serial.println(filename);
+    #endif
+  }
+  
   
   ///////// Interval Timing and Sleep Code ////////////////
   //delay(SampleIntSeconds);   // Simple delay for testing only interval set by const in header
@@ -160,7 +179,7 @@ void writeHeader() {
 }
 
 // Print data and time followed by battery voltage to SD card
-void SdOutput() {
+void WriteToSD() {
 
   // Formatting for file out put dd/mm/yyyy hh:mm:ss, [sensor output]  
   logfile.print(rtc.getDay());
