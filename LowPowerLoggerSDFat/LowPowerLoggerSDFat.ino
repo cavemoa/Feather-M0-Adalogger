@@ -2,13 +2,11 @@
  Low Power logger for Feather M0 Adalogger
 
  Uses internal RTC and interrupts to put M0 into deep sleep.
- Output logged to uSD at intervals set
+ Output logged to uSD at intervals set using RTC
 
  Created by:  Jonathan Davies
- Date:        01/01/16
- Version:     0.3
- Changes: Limited number of file flushes to reduce power
- 
+ Date:        16/01/16
+ Version:     0.4
 */
 
 ////////////////////////////////////////////////////////////
@@ -34,13 +32,13 @@ extern "C" char *sbrk(int i); //  Used by FreeRAm Function
 
 //////////////// Key Settings ///////////////////
 
-#define SampleIntSec 60 // RTC - Sample interval in seconds
-#define SamplesPerCycle 60  // Number of samples to buffer before uSD card flush is called
+#define SampleIntSec 10 // RTC - Sample interval in seconds
+#define SamplesPerCycle 6  // Number of samples to buffer before uSD card flush is called
 
 // 65536 (2^16) is the maximum number of spreadsheet rows supported by Excel 97, Excel 2000, Excel 2002 and Excel 2003 
 // Excel 2007, 2010 and 2013 support 1,048,576 rows (2^20)). Text files that are larger than 65536 rows 
 // cannot be imported to these versions of Excel.
-#define SamplesPerFile 10080 // 1 per minute = 1440 per day = 10080 per week and ¬380Kb file (assumes 38bytes per sample)
+#define SamplesPerFile 12 // 1 per minute = 1440 per day = 10080 per week and ¬380Kb file (assumes 38bytes per sample)
 
 
 const int SampleIntSeconds = 500;   //Simple Delay used for testing, ms i.e. 1000 = 1 sec
@@ -89,6 +87,7 @@ void loop() {
 
   blink(GREEN,2);             // Quick blink to show we have a pulse
   CurrentCycleCount += 1;     //  Increment samples in current uSD flush cycle
+  CurrentFileCount += 1;     //  Increment samples in current file
 
   #ifdef ECHO_TO_SERIAL
     SerialOutput();           // Only logs to serial if ECHO_TO_SERIAL is uncommented at start of code
@@ -98,6 +97,7 @@ void loop() {
 
   //  Code to limit the number of power hungry writes to the uSD
   //  Don't sync too often - requires 2048 bytes of I/O to SD card. 512 bytes of I/O if using Fat16 library
+  //  But this code forces it to sync at a fixd interval, i.e. once per hour etc depending on what is set
   if( CurrentCycleCount >= SamplesPerCycle ) {
     logfile.flush();
     CurrentCycleCount = 0;
@@ -106,17 +106,18 @@ void loop() {
     #endif
   }
 
-  // Code to increment files limiting number of lines in each hence size
-
+  // Code to increment files limiting number of lines in each hence size, close the open file first.
   if( CurrentFileCount >= SamplesPerFile ) {
-    //logfile.flush();
+    if (logfile.isOpen()) {
+      logfile.close();
+    }
+    CreateFile();
     CurrentFileCount = 0;
     #ifdef ECHO_TO_SERIAL
       Serial.println("New log file created: ");
       Serial.println(filename);
     #endif
   }
-  
   
   ///////// Interval Timing and Sleep Code ////////////////
   //delay(SampleIntSeconds);   // Simple delay for testing only interval set by const in header
