@@ -40,20 +40,23 @@ extern "C" char *sbrk(int i); //  Used by FreeRAm Function
 const int SampleIntSeconds = 500;   //Simple Delay used for testing, ms i.e. 1000 = 1 sec
 
 /* Change these values to set the current initial time */
-const byte hours = 18;
-const byte minutes = 50;
+const byte hours = 10;
+const byte minutes = 11;
 const byte seconds = 0;
 /* Change these values to set the current initial date */
-const byte day = 02;
+const byte day = 05;
 const byte month = 01;
 const byte year = 16;
 
 /////////////// Global Objects ////////////////////
 RTCZero rtc;    // Create RTC object
 File logfile;   // Create file object
+char filename[15];
+  
 float measuredvbat;   // Variable for battery voltage
 int NextAlarmSec; // Variable to hold next alarm time in seconds
 unsigned int CurrentCycleCount;  // Num of smaples in current cycle, before uSD flush call
+
 
 
 //////////////    Setup   ///////////////////
@@ -68,39 +71,11 @@ void setup() {
   rtc.setTime(hours, minutes, seconds);   // Set the time
   rtc.setDate(day, month, year);    // Set the date
 
-   
-  #ifdef ECHO_TO_SERIAL
-    while (! Serial); // Wait until Serial is ready
-    Serial.begin(115200);
-    Serial.println("\r\nFeather M0 Analog logger");
-  #endif
-  
-  // see if the card is present and can be initialized:
-  if (!SD.begin(cardSelect)) {
-    Serial.println("Card init. failed! or Card not present");
-    error(2);     // Two red flashes means no card or card init failed.
-  }
-  char filename[15];
   strcpy(filename, "ANALOG00.CSV");
-  for (uint8_t i = 0; i < 100; i++) {
-    filename[6] = '0' + i/10;
-    filename[7] = '0' + i%10;
-    // create if does not exist, do not open existing, write, sync after write
-    if (! SD.exists(filename)) {
-      break;
-    }
-  }
+  CreateFile();   
 
-  logfile = SD.open(filename, FILE_WRITE);
-  if( ! logfile ) {
-    Serial.print("Couldnt create "); 
-    Serial.println(filename);
-    error(3);
-  }
-  Serial.print("Writing to "); 
-  Serial.println(filename);
-  Serial.println("Logging ....");
-}
+
+}  
 
 /////////////////////   Loop    //////////////////////
 void loop() {
@@ -171,11 +146,6 @@ void SerialOutput() {
 // Print data and time followed by battery voltage to SD card
 void SdOutput() {
 
-  //if (!file.sync() || file.getWriteError()) {
-  //  error("write error");
-  //  error(3);     // Three red flashes means write failed.
-  //}
-
   // Formatting for file out put dd/mm/yyyy hh:mm:ss, [sensor output]
   
   logfile.print(rtc.getDay());
@@ -236,6 +206,41 @@ float BatteryVoltage () {
   measuredvbat *= 3.3;  // Multiply by 3.3V, our reference voltage
   measuredvbat /= 1024; // convert to voltage
   return measuredvbat;
+}
+
+
+void CreateFile()
+{
+    #ifdef ECHO_TO_SERIAL
+    while (! Serial); // Wait until Serial is ready
+    Serial.begin(115200);
+    Serial.println("\r\nFeather M0 Analog logger");
+  #endif
+  
+  // see if the card is present and can be initialized:
+  if (!SD.begin(cardSelect)) {
+    Serial.println("Card init. failed! or Card not present");
+    error(2);     // Two red flashes means no card or card init failed.
+  }
+  
+  for (uint8_t i = 0; i < 100; i++) {
+    filename[6] = '0' + i/10;
+    filename[7] = '0' + i%10;
+    // create if does not exist, do not open existing, write, sync after write
+    if (! SD.exists(filename)) {
+      break;
+    }
+  }  
+
+  logfile = SD.open(filename, FILE_WRITE);
+  if( ! logfile ) {
+    Serial.print("Couldnt create "); 
+    Serial.println(filename);
+    error(3);
+  }
+  Serial.print("Writing to "); 
+  Serial.println(filename);
+  Serial.println("Logging ....");
 }
 
 void alarmMatch() // Do something when interrupt called
