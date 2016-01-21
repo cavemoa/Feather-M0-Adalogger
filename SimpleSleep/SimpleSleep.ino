@@ -20,14 +20,6 @@ void setup()
 void loop()
 {
 
-  AlarmTime += 5; // Adds 5 seconds to alarm time
-  AlarmTime = AlarmTime % 60; // checks for roll over 60 seconds and corrects
-  rtc.setAlarmSeconds(AlarmTime); // Wakes at next alarm time, i.e. every 5 secs
-  
-  rtc.enableAlarm(rtc.MATCH_SS); // Match seconds only
-  rtc.attachInterrupt(alarmMatch); // Attach function to interupt
-  rtc.standbyMode();    // Sleep until next alarm match
-
   // Simple indication of being awake
   digitalWrite(13, HIGH);   // turn the LED on 
   delay(100);              
@@ -36,6 +28,15 @@ void loop()
   digitalWrite(13, HIGH);   // turn the LED on 
   delay(100);
   digitalWrite(13, LOW);    // turn the LED off
+  
+
+  AlarmTime += 5; // Adds 5 seconds to alarm time
+  AlarmTime = AlarmTime % 60; // checks for roll over 60 seconds and corrects
+  rtc.setAlarmSeconds(AlarmTime); // Wakes at next alarm time, i.e. every 5 secs
+  
+  rtc.enableAlarm(rtc.MATCH_SS); // Match seconds only
+  rtc.attachInterrupt(alarmMatch); // Attach function to interupt
+  rtc.standbyMode();    // Sleep until next alarm match
   
 }
 
