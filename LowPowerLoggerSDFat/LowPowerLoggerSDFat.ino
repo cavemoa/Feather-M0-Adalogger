@@ -10,7 +10,7 @@
 */
 
 ////////////////////////////////////////////////////////////
-// #define ECHO_TO_SERIAL // Allows serial output if uncommented
+//#define ECHO_TO_SERIAL // Allows serial output if uncommented
 ////////////////////////////////////////////////////////////
 
 #include <RTCZero.h>
@@ -32,18 +32,16 @@ extern "C" char *sbrk(int i); //  Used by FreeRAm Function
 
 //////////////// Key Settings ///////////////////
 
-#define SampleIntSec 30 // RTC - Sample interval in seconds
-#define SampleIntMin 01 // RTC - Sample interval in minutes
 
-#define SamplesPerCycle 20  // Number of samples to buffer before uSD card flush is called
+#define SampleIntMin 01 // RTC - Sample interval in minutes
+#define SampleIntSec 35 // RTC - Sample interval in seconds
+
+#define SamplesPerCycle 60  // Number of samples to buffer before uSD card flush is called. 
 
 // 65536 (2^16) is the maximum number of spreadsheet rows supported by Excel 97, Excel 2000, Excel 2002 and Excel 2003 
 // Excel 2007, 2010 and 2013 support 1,048,576 rows (2^20)). Text files that are larger than 65536 rows 
 // cannot be imported to these versions of Excel.
-#define SamplesPerFile 120 // 1 per minute = 1440 per day = 10080 per week and ¬380Kb file (assumes 38bytes per sample)
-
-
-const int SampleIntSeconds = 500;   //Simple Delay used for testing, ms i.e. 1000 = 1 sec
+#define SamplesPerFile 1440 // 1 per minute = 1440 per day = 10080 per week and ¬380Kb file (assumes 38bytes per sample)
 
 /* Change these values to set the current initial time */
 const byte hours = 18;
@@ -78,6 +76,10 @@ void setup() {
   rtc.setTime(hours, minutes, seconds);   // Set the time
   rtc.setDate(day, month, year);    // Set the date
 
+  // Get the Alarm times in sync with the RTC set times so that you do't get a big initial delay
+  NextAlarmMin = minutes;
+  NextAlarmSec = seconds;
+
   strcpy(filename, "ANALOG00.CSV");   // Template for file name, characters 6 & 7 get set automatically later
   CreateFile();
 
@@ -86,15 +88,15 @@ void setup() {
 /////////////////////   Loop    //////////////////////
 void loop() {
 
-  blink(GREEN,2);             // Quick blink to show we have a pulse
-  CurrentCycleCount += 1;     //  Increment samples in current uSD flush cycle
-  CurrentFileCount += 1;     //  Increment samples in current file
+  blink(GREEN,2);               // Quick blink to show we have a pulse
+  CurrentCycleCount += 1;       //  Increment samples in current uSD flush cycle
+  CurrentFileCount += 1;        //  Increment samples in current file
 
   #ifdef ECHO_TO_SERIAL
-    SerialOutput();           // Only logs to serial if ECHO_TO_SERIAL is uncommented at start of code
+    SerialOutput();             // Only logs to serial if ECHO_TO_SERIAL is uncommented at start of code
   #endif
   
-  WriteToSD();                 // Output to uSD card stream, will not actually be written due to buffer/page size
+  WriteToSD();                  // Output to uSD card stream, will not actually be written due to buffer/page size
 
   //  Code to limit the number of power hungry writes to the uSD
   //  Don't sync too often - requires 2048 bytes of I/O to SD card. 512 bytes of I/O if using Fat16 library
@@ -121,32 +123,31 @@ void loop() {
   }
   
   ///////// Interval Timing and Sleep Code ////////////////
-  //delay(SampleIntSeconds);   // Simple delay for testing only interval set by const in header
 
-  //NextAlarmSec = (NextAlarmSec + SampleIntSec) % 60;    // modulus to deal with rollover 65 becomes 5
-  //rtc.setAlarmSeconds(NextAlarmSec); // RTC time to wake, currently seconds only
-  //rtc.enableAlarm(rtc.MATCH_SS); // Match seconds only
-
-  // Simple proces if we're just adding seconds, bit more complicated if we add minutes & seconds
-  if ( SampleIntMin !=0 ) {
-    NextAlarmSec = (NextAlarmSec + SampleIntSec) % 60;   // i.e. 65 becomes 5
-    rtc.setAlarmSeconds(NextAlarmSec); // RTC time to wake, currently seconds only
-    rtc.enableAlarm(rtc.MATCH_SS); // Match seconds only
+  // Calculate next alarm time. Simple proces if we're just adding seconds, bit more complicated if we add minutes & seconds
+  if ( SampleIntMin == 0 ) {
+    NextAlarmSec = (NextAlarmSec + SampleIntSec) % 60;    // modulus to deal with rollover 65 becomes 5
+    rtc.setAlarmSeconds(NextAlarmSec);                    // RTC time to wake, currently seconds only
+    rtc.enableAlarm(rtc.MATCH_SS);                        // Match seconds only
   }
   else {  
-    NextAlarmMin = (NextAlarmMin + SampleIntMin) % 60;   // modulus to deal with rollover 65 becomes 5
-    NextAlarmMin = (NextAlarmSec + SampleIntSec) / 60; // find rollover minute, i.e. 65 secs becomes 1 minute extra
-    NextAlarmSec = (NextAlarmSec + SampleIntSec) % 60;   // i.e. 65 becomes 5
-    rtc.setAlarmSeconds(NextAlarmMin); // Set RTC time to wake in minutes
-    rtc.setAlarmSeconds(NextAlarmSec); // Set RTC time to wake in seconds
-    rtc.enableAlarm(rtc.MATCH_MMSS);
+    NextAlarmMin = (NextAlarmMin + SampleIntMin) % 60;    // modulus to deal with rollover 65 becomes 5
+    NextAlarmMin = (NextAlarmSec + SampleIntSec) / 60;    // find rollover minute, i.e. 65 secs becomes 1 minute extra
+    NextAlarmSec = (NextAlarmSec + SampleIntSec) % 60;    // i.e. 65 becomes 5
+    //Serial.print("Alarm minutes: ");
+    //Serial.println(NextAlarmMin);
+    //Serial.print(":");
+    //Serial.println(NextAlarmSec);
+
+    rtc.setAlarmSeconds(NextAlarmSec);                    // Set RTC time to wake in seconds
+    rtc.setAlarmMinutes(NextAlarmMin);                    // Set RTC time to wake in minutes
+    rtc.enableAlarm(rtc.MATCH_MMSS);                      // Match minutes & seconds
   }
 
+  rtc.attachInterrupt(alarmMatch);                        // Attaches function to be called, currently blank
+  delay(5);                                               // Brief delay prior to sleeping not really sure its required
   
-  rtc.attachInterrupt(alarmMatch); // Attaches function to be called, currently blank
-  delay(5); // Brief delay prior to sleeping not really sure its required
-  
-  rtc.standbyMode();    // Sleep until next alarm match
+  rtc.standbyMode();                                      // Sleep until next alarm match
   
   // Code re-starts here after sleep !
 
