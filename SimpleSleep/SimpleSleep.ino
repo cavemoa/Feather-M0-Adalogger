@@ -30,7 +30,7 @@ void loop()
   digitalWrite(13, LOW);    // turn the LED off
   
 
-  AlarmTime += 5; // Adds 5 seconds to alarm time
+  AlarmTime += 45; // Adds 5 seconds to alarm time
   AlarmTime = AlarmTime % 60; // checks for roll over 60 seconds and corrects
   rtc.setAlarmSeconds(AlarmTime); // Wakes at next alarm time, i.e. every 5 secs
   

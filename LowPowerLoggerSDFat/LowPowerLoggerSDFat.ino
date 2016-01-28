@@ -10,7 +10,7 @@
 */
 
 ////////////////////////////////////////////////////////////
-//#define ECHO_TO_SERIAL // Allows serial output if uncommented
+#define ECHO_TO_SERIAL // Allows serial output if uncommented
 ////////////////////////////////////////////////////////////
 
 #include <RTCZero.h>
@@ -34,7 +34,7 @@ extern "C" char *sbrk(int i); //  Used by FreeRAm Function
 
 
 #define SampleIntMin 01 // RTC - Sample interval in minutes
-#define SampleIntSec 35 // RTC - Sample interval in seconds
+#define SampleIntSec 40 // RTC - Sample interval in seconds
 
 #define SamplesPerCycle 60  // Number of samples to buffer before uSD card flush is called. 
 
@@ -46,7 +46,7 @@ extern "C" char *sbrk(int i); //  Used by FreeRAm Function
 /* Change these values to set the current initial time */
 const byte hours = 18;
 const byte minutes = 29;
-const byte seconds = 0;
+const byte seconds = 30;
 /* Change these values to set the current initial date */
 const byte day = 19;
 const byte month = 01;
@@ -75,10 +75,6 @@ void setup() {
   rtc.begin();    // Start the RTC in 24hr mode
   rtc.setTime(hours, minutes, seconds);   // Set the time
   rtc.setDate(day, month, year);    // Set the date
-
-  // Get the Alarm times in sync with the RTC set times so that you do't get a big initial delay
-  NextAlarmMin = minutes;
-  NextAlarmSec = seconds;
 
   strcpy(filename, "ANALOG00.CSV");   // Template for file name, characters 6 & 7 get set automatically later
   CreateFile();
@@ -131,13 +127,13 @@ void loop() {
     rtc.enableAlarm(rtc.MATCH_SS);                        // Match seconds only
   }
   else {  
-    NextAlarmMin = (NextAlarmMin + SampleIntMin) % 60;    // modulus to deal with rollover 65 becomes 5
-    NextAlarmMin = (NextAlarmSec + SampleIntSec) / 60;    // find rollover minute, i.e. 65 secs becomes 1 minute extra
-    NextAlarmSec = (NextAlarmSec + SampleIntSec) % 60;    // i.e. 65 becomes 5
-    //Serial.print("Alarm minutes: ");
-    //Serial.println(NextAlarmMin);
-    //Serial.print(":");
-    //Serial.println(NextAlarmSec);
+    NextAlarmMin = (rtc.getMinutes() + SampleIntMin) % 60;    // modulus to deal with rollover 65 becomes 5
+    NextAlarmMin = NextAlarmMin + int ((rtc.getSeconds() + SampleIntSec) / 60);    // find rollover minute, i.e. 65 secs becomes 1 minute extra
+    NextAlarmSec = (rtc.getSeconds() + SampleIntSec) % 60;    // i.e. 65 becomes 5
+
+    #ifdef ECHO_TO_SERIAL
+      OutputNextAlarm();                                  // Outputs next alarm if debugging
+    #endif
 
     rtc.setAlarmSeconds(NextAlarmSec);                    // Set RTC time to wake in seconds
     rtc.setAlarmMinutes(NextAlarmMin);                    // Set RTC time to wake in minutes
@@ -230,6 +226,7 @@ void SerialOutput() {
   //Serial.print(":");
   //Serial.print(freeram ());
   //Serial.print("-");
+  Serial.print("Current RTC time: ");
   Serial.print(rtc.getDay());
   Serial.print("/");
   Serial.print(rtc.getMonth());
@@ -249,7 +246,19 @@ void SerialOutput() {
   Serial.println(BatteryVoltage ());   // Print battery voltage  
 }
 
-
+// Debugging output to set what next alarm value is
+void OutputNextAlarm() {
+  Serial.print("Next alarm time set: ");
+  Serial.print(rtc.getHours());
+  Serial.print(":");
+  if(NextAlarmMin < 10)
+    Serial.print('0');      // Trick to add leading zero for formatting
+  Serial.print(NextAlarmMin);
+  Serial.print(":");
+  if(NextAlarmSec < 10)
+    Serial.print('0');      // Trick to add leading zero for formatting
+  Serial.println(NextAlarmSec);  
+}
 
 
 // blink out an error code

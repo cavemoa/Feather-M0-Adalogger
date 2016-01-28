@@ -23,7 +23,7 @@
 
 //////////////// Key Settings ///////////////////
 
-const int SampleIntSeconds = 30000;   //Sample interval in ms i.e. 1000 = 1 sec
+const int SampleIntSeconds = 5000;   //Sample interval in ms i.e. 1000 = 1 sec
 
 /* Change these values to set the current initial time */
 const byte hours = 13;
