@@ -37,8 +37,8 @@ extern "C" char *sbrk(int i); //  Used by FreeRAm Function
 //////////////// Key Settings ///////////////////
 
 
-#define SampleIntMin 00 // RTC - Sample interval in minutes
-#define SampleIntSec 10 // RTC - Sample interval in seconds
+#define SampleIntMin 01 // RTC - Sample interval in minutes
+#define SampleIntSec 00 // RTC - Sample interval in seconds
 
 #define SamplesPerCycle 60  // Number of samples to buffer before uSD card flush is called. 
 
@@ -107,7 +107,6 @@ void setup() {
   if (tempsensor.begin()) 
   {
     Serial.println("Found a MCP9808 sensor");
-    tempsensor.shutdown_wake(0);  // Wake MCP9808 Temperature Sensor (200uA while awake)
   }
   else
   {
@@ -125,11 +124,9 @@ void setup() {
 void loop() {
 
   blink(GREEN,1); 
-  
   tempsensor.shutdown_wake(0);  // Wake MCP9808 Temperature Sensor (200uA while awake)
-  delay(250);
-
   blink(GREEN,1);               // Quick blink to show we have a pulse
+
   CurrentCycleCount += 1;       //  Increment samples in current uSD flush cycle
   CurrentFileCount += 1;        //  Increment samples in current file
 
