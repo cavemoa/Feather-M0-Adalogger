@@ -12,7 +12,7 @@
 */
 
 ////////////////////////////////////////////////////////////
-#define ECHO_TO_SERIAL // Allows serial output if uncommented
+//#define ECHO_TO_SERIAL // Allows serial output if uncommented
 ////////////////////////////////////////////////////////////
 
 #include <SPI.h>
@@ -133,7 +133,7 @@ void loop() {
   rtc.attachInterrupt(alarmMatch); // Attaches function to be called, currently blank
   delay(50); // Brief delay prior to sleeping not really sure its required
   
-  // rtc.standbyMode();    // Sleep until next alarm match
+  rtc.standbyMode();    // Sleep until next alarm match
   
   // Code re-starts here after sleep !
 

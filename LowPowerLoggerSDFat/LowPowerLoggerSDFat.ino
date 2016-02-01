@@ -10,7 +10,7 @@
 */
 
 ////////////////////////////////////////////////////////////
-#define ECHO_TO_SERIAL // Allows serial output if uncommented
+//#define ECHO_TO_SERIAL // Allows serial output if uncommented
 ////////////////////////////////////////////////////////////
 
 #include <RTCZero.h>
@@ -33,8 +33,8 @@ extern "C" char *sbrk(int i); //  Used by FreeRAm Function
 //////////////// Key Settings ///////////////////
 
 
-#define SampleIntMin 01 // RTC - Sample interval in minutes
-#define SampleIntSec 40 // RTC - Sample interval in seconds
+#define SampleIntMin 00 // RTC - Sample interval in minutes
+#define SampleIntSec 10 // RTC - Sample interval in seconds
 
 #define SamplesPerCycle 60  // Number of samples to buffer before uSD card flush is called. 
 

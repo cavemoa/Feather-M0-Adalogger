@@ -6,31 +6,37 @@
 */
 
 #include <RTCZero.h>
+#include <Wire.h>
+#include "Adafruit_MCP9808.h"
+
 
 /* Create an rtc object */
 RTCZero rtc;
 int AlarmTime;
 
+Adafruit_MCP9808 tempsensor = Adafruit_MCP9808();
+
 void setup()
 {
   rtc.begin();
-  
+  tempsensor.begin();
+  tempsensor.shutdown_wake(1);   // Don't remove this line! required before reading temp
 }
 
 void loop()
 {
 
   // Simple indication of being awake
-  digitalWrite(13, HIGH);   // turn the LED on 
+  digitalWrite(8, HIGH);   // turn the LED on 
   delay(100);              
-  digitalWrite(13, LOW);    // turn the LED off
+  digitalWrite(8, LOW);    // turn the LED off
   delay(100);
-  digitalWrite(13, HIGH);   // turn the LED on 
+  digitalWrite(8, HIGH);   // turn the LED on 
   delay(100);
-  digitalWrite(13, LOW);    // turn the LED off
-  
+  digitalWrite(8, LOW);    // turn the LED off
+  digitalWrite(13, LOW); 
 
-  AlarmTime += 5; // Adds 5 seconds to alarm time
+  AlarmTime += 10; // Adds 5 seconds to alarm time
   AlarmTime = AlarmTime % 60; // checks for roll over 60 seconds and corrects
   rtc.setAlarmSeconds(AlarmTime); // Wakes at next alarm time, i.e. every 5 secs
   
