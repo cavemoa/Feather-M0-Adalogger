@@ -35,25 +35,22 @@ SdFat SD;             //Quick way to make SdFat work with standard SD.h sketches
 extern "C" char *sbrk(int i); //  Used by FreeRAm Function
 
 //////////////// Key Settings ///////////////////
-
-
-#define SampleIntMin 01 // RTC - Sample interval in minutes
-#define SampleIntSec 00 // RTC - Sample interval in seconds
-
+#define SampleIntMin 00 // RTC - Sample interval in minutes
+#define SampleIntSec 07 // RTC - Sample interval in seconds
 #define SamplesPerCycle 60  // Number of samples to buffer before uSD card flush is called. 
 
 // 65536 (2^16) is the maximum number of spreadsheet rows supported by Excel 97, Excel 2000, Excel 2002 and Excel 2003 
 // Excel 2007, 2010 and 2013 support 1,048,576 rows (2^20)). Text files that are larger than 65536 rows 
 // cannot be imported to these versions of Excel.
-#define SamplesPerFile 1440 // 1 per minute = 1440 per day = 10080 per week and ¬380Kb file (assumes 38bytes per sample)
+#define SamplesPerFile 120 // 1 per minute = 1440 per day = 10080 per week and ¬380Kb file (assumes 38bytes per sample)
 
 /* Change these values to set the current initial time */
-const byte hours = 13;
-const byte minutes = 30;
+const byte hours = 12;
+const byte minutes = 44;
 const byte seconds = 00;
 /* Change these values to set the current initial date */
-const byte day = 28;
-const byte month = 01;
+const byte day = 01;
+const byte month = 02;
 const byte year = 16;
 
 /////////////// Global Objects ////////////////////
@@ -77,7 +74,7 @@ void setup() {
   #ifdef ECHO_TO_SERIAL
     while (! Serial); // Wait until Serial is ready
     Serial.begin(115200);
-    Serial.println("\r\nFeather M0 Glow Worm Logger");
+    Serial.println("Feather M0 Glow Worm Logger");
   #endif  
   
   //Set board LED pins as output
@@ -90,8 +87,8 @@ void setup() {
   rtc.setDate(day, month, year);    // Set the date
 
   /////// Configure and start Sensors ///////////////
-  
   //Light Sensor: tsl2591
+
   if (tsl.begin()) 
   {
     Serial.println("Found a TSL2591 sensor");
@@ -182,15 +179,28 @@ void loop() {
   #endif
     
   rtc.attachInterrupt(alarmMatch);                        // Attaches function to be called, currently blank
-
-  delay(500);                                               // Brief delay prior to sleeping not really sure its required
   
   tempsensor.shutdown_wake(1);                            // shutdown MSP9808 - power consumption ~0.1uA
+  digitalWrite(13, LOW);
+  digitalWrite(8, LOW);
+
+  delay(50);                                              // Brief delay prior to sleeping not really sure its required
   rtc.standbyMode();                                      // Put M0 to Sleep until next alarm match
   
   // Code re-starts here after sleep !
 
 }   // End of Main Loop
+
+
+
+
+
+
+
+
+
+
+
 
 ///////////////////////////////   Functions   /////////////////////////////////////////
 
@@ -220,6 +230,20 @@ void CreateFile()
     Serial.println(filename);
     error(3);
   }
+
+   // Grab time to use for file creation
+   uint16_t C_year = rtc.getYear()+2000;
+   uint8_t C_month = rtc.getMonth();
+   uint8_t C_day = rtc.getDay();
+   uint8_t C_hour = rtc.getHours();
+   uint8_t C_minute = rtc.getMinutes();
+   uint8_t C_second = rtc.getSeconds();
+
+   // set creation date time
+   logfile.timestamp(T_CREATE, C_year, C_month, C_day, C_hour, C_minute, C_second);
+   logfile.timestamp(T_WRITE, C_year, C_month, C_day, C_hour, C_minute, C_second);
+   logfile.timestamp(T_ACCESS, C_year, C_month, C_day, C_hour, C_minute, C_second);
+  
   #ifdef ECHO_TO_SERIAL
     Serial.print("Writing to "); 
     Serial.println(filename);
