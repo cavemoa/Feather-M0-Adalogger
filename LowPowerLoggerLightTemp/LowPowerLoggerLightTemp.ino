@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////
 
 #include <RTCZero.h>
-#include <SPI.h>
+//#include <SPI.h>
 #include <SdFat.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
@@ -36,13 +36,13 @@ extern "C" char *sbrk(int i); //  Used by FreeRAm Function
 
 //////////////// Key Settings ///////////////////
 #define SampleIntMin 00 // RTC - Sample interval in minutes
-#define SampleIntSec 07 // RTC - Sample interval in seconds
+#define SampleIntSec 15 // RTC - Sample interval in seconds
 #define SamplesPerCycle 60  // Number of samples to buffer before uSD card flush is called. 
 
 // 65536 (2^16) is the maximum number of spreadsheet rows supported by Excel 97, Excel 2000, Excel 2002 and Excel 2003 
 // Excel 2007, 2010 and 2013 support 1,048,576 rows (2^20)). Text files that are larger than 65536 rows 
 // cannot be imported to these versions of Excel.
-#define SamplesPerFile 120 // 1 per minute = 1440 per day = 10080 per week and ¬380Kb file (assumes 38bytes per sample)
+#define SamplesPerFile 1440 // 1 per minute = 1440 per day = 10080 per week and ¬380Kb file (assumes 38bytes per sample)
 
 /* Change these values to set the current initial time */
 const byte hours = 12;
@@ -180,9 +180,9 @@ void loop() {
     
   rtc.attachInterrupt(alarmMatch);                        // Attaches function to be called, currently blank
   
-  tempsensor.shutdown_wake(1);                            // shutdown MSP9808 - power consumption ~0.1uA
-  digitalWrite(13, LOW);
-  digitalWrite(8, LOW);
+  tempsensor.shutdown_wake(1);                            // shutdown MSP9808 - power consumption ~0.1uA in theory !!
+  //digitalWrite(13, LOW);                                  // Helps with power consumption during sleep (~50uA)
+  //digitalWrite(8, LOW);
 
   delay(50);                                              // Brief delay prior to sleeping not really sure its required
   rtc.standbyMode();                                      // Put M0 to Sleep until next alarm match
