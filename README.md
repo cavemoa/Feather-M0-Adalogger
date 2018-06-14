@@ -6,7 +6,7 @@ Repo for the code  as I play with the new Feather M0 Adalogger from Adafruit. Ai
 
 First pass at a simple logger that saves ADC (in this case battery voltage) to uSD, it uses the RTC for a time stamp but not to set logging interval. Does not sleep and uses logfile.flush() to ensure every reading is saved. So is reasonably heavy on power. Much of the code comes from the Adafruit tutorial.
 
-## SimpleLogger2
+### SimpleLogger2
 Similar to simplelogger but with code in functions and minor revisions/tweaks. Still uses delay() and not RTC
 
 ## SimpleSleep
